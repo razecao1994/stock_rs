@@ -1,23 +1,150 @@
+use crate::app::App;
+use crossterm::{
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    execute,
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+};
+use std::{
+    error::Error,
+    io,
+    time::{Duration, Instant},
+};
 use tui::{
-    backend::Backend,
-    layout::{Constraint, Direction, Layout},
-    widgets::{Block, Borders},
-    Frame,
+    backend::{Backend, CrosstermBackend},
+    layout::{Constraint, Direction, Layout, Rect},
+    style::Color,
+    style::{Modifier, Style},
+    text::{Span, Spans},
+    widgets::{Block, Borders, List, ListItem, Paragraph, Wrap},
+    Frame, Terminal,
 };
 
-pub fn draw<B: Backend>(f: &mut Frame<B>) {
+pub fn run<'a>(app: App<'a>, tick_rate: Duration) -> Result<(), Box<dyn Error>> {
+    enable_raw_mode()?;
+    let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
+
+    let res = run_app(&mut terminal, app, tick_rate);
+
+    disable_raw_mode()?;
+    execute!(
+        terminal.backend_mut(),
+        LeaveAlternateScreen,
+        DisableMouseCapture
+    )?;
+    terminal.show_cursor()?;
+    if let Err(err) = res {
+        println!("{:?}", err)
+    }
+    Ok(())
+}
+
+fn run_app<'a, B: Backend>(
+    terminal: &mut Terminal<B>,
+    mut app: App<'a>,
+    tick_rate: Duration,
+) -> Result<(), Box<dyn Error>> {
+    let mut last_tick = Instant::now();
+    loop {
+        terminal.draw(|f| draw(f, &mut app))?;
+
+        let timeout = tick_rate
+            .checked_sub(last_tick.elapsed())
+            .unwrap_or_else(|| Duration::from_secs(0));
+
+        if crossterm::event::poll(timeout)? {
+            if let Event::Key(key) = event::read()? {
+                match key.code {
+                    KeyCode::Char(i) => app.on_key(i),
+                    KeyCode::Left => {}
+                    KeyCode::Up => app.on_up(),
+                    KeyCode::Right => {}
+                    KeyCode::Down => app.on_bottom(),
+                    _ => {}
+                }
+            }
+        }
+        if last_tick.elapsed() >= tick_rate {
+            last_tick = Instant::now();
+        }
+    }
+}
+
+pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
+    let chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .margin(1)
+        .constraints([Constraint::Percentage(10), Constraint::Percentage(90)].as_ref())
+        .split(f.size());
+    draw_list(f, app, chunks[0]);
+    draw_stock_block(f, app, chunks[1]);
+}
+
+fn draw_list<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
+    let items: Vec<ListItem> = app
+        .stock_ids
+        .items
+        .iter()
+        .map(|i| {
+            let lines = vec![Spans::from(Span::styled(
+                i.stock_code,
+                Style::default().add_modifier(Modifier::ITALIC),
+            ))];
+            ListItem::new(lines).style(Style::default().fg(Color::Black).bg(Color::White))
+        })
+        .collect();
+    let widget_items = List::new(items)
+        .block(Block::default().borders(Borders::ALL).title("Stock List"))
+        .highlight_style(
+            Style::default()
+                .bg(Color::LightGreen)
+                .add_modifier(Modifier::BOLD),
+        );
+    f.render_stateful_widget(widget_items, area, &mut app.stock_ids.state);
+}
+
+fn draw_stock_block<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .title(app.selected_item_brief_info().stock_name);
+    f.render_widget(block, area);
+
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(1)
-        .constraints(
-            [
-                Constraint::Percentage(10),
-                Constraint::Percentage(80),
-                Constraint::Percentage(10),
-            ]
-            .as_ref(),
-        )
-        .split(f.size());
-    let block = Block::default().title("Stock").borders(Borders::ALL);
-    f.render_widget(block, chunks[0]);
+        .constraints([Constraint::Percentage(10), Constraint::Percentage(90)])
+        .split(area);
+    draw_stock_header(f, app, chunks[0]);
+}
+
+fn draw_stock_header<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
+    let text = vec![
+        Spans::from(Span::styled(
+            "最新: 0.900",
+            Style::default()
+                .fg(Color::Green)
+                .add_modifier(Modifier::BOLD),
+        )),
+        Spans::from(vec![
+            Span::styled("今开: 0.902  ", Style::default().fg(Color::Green)),
+            Span::styled("最高: 0.912  ", Style::default().fg(Color::Red)),
+            Span::from("量: 770.7 万"),
+        ]),
+        Spans::from(vec![
+            Span::from("昨收: 0.904  "),
+            Span::styled("最低: 0.894  ", Style::default().fg(Color::Green)),
+            Span::from("额: 6.95 亿"),
+        ]),
+    ];
+    let block = Block::default().borders(Borders::ALL).title(Span::styled(
+        "简要信息",
+        Style::default().add_modifier(Modifier::BOLD),
+    ));
+    let paragraph = Paragraph::new(text)
+        .style(Style::default().fg(Color::White).bg(Color::Black))
+        .block(block)
+        .wrap(Wrap { trim: true });
+    f.render_widget(paragraph, area);
 }

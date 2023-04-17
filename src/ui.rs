@@ -4,6 +4,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use custom_widget::kline::{kblock::KLineData};
 use std::{
     error::Error,
     io,
@@ -147,4 +148,45 @@ fn draw_stock_header<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
         .block(block)
         .wrap(Wrap { trim: true });
     f.render_widget(paragraph, area);
+}
+
+fn draw_k_line_chart<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
+    // let x_labels = vec![
+    //     Span::styled(
+    //         format!("{}", app.window[0]),
+    //         Style::default().add_modifier(Modifier::BOLD),
+    //     ),
+    //     Span::raw(format!("{}", (app.window[0] + app.window[1]) / 2.0)),
+    //     Span::styled(
+    //         format!("{}", app.window[1]),
+    //         Style::default().add_modifier(Modifier::BOLD),
+    //     ),
+    // ];
+    let data = vec![
+        KLineData{
+            start:0.902,
+            end:0.9,
+            min:0.894,
+            max:0.912,
+            date:20230407,
+        },
+        KLineData{
+            start:0.919,
+            end:0.904,
+            min:0.901,
+            max:0.924,
+            date:20230406,
+        },
+        KLineData{
+            start:0.917,
+            end:0.925,
+            min:0.908,
+            max:0.927,
+            date:20230404,
+        },
+        ];
+    let dataset = kline::klinechart::Dataset::default()
+    .name("假数据")
+    .data(data)
+    .style(Style::default().fg(Color::Yellow));
 }

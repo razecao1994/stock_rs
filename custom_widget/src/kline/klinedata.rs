@@ -30,6 +30,7 @@ pub struct Kblock {
 impl Shape for Kblock {
     fn draw(&self, painter: &mut Painter) {
         let lines: [Line; 6] = [
+            // 下影线
             Line {
                 x1: self.x,
                 y1: self.min,
@@ -38,30 +39,30 @@ impl Shape for Kblock {
                 color: self.color,
             },
             Line {
-                x1: self.x,
+                x1: self.x - 0.1,
                 y1: self.block_bottom,
-                x2: self.x + 0.05,
+                x2: self.x + 0.1,
                 y2: self.block_bottom,
                 color: self.color,
             },
             Line {
-                x1: self.x,
+                x1: self.x - 0.1,
                 y1: self.block_bottom,
-                x2: self.x,
+                x2: self.x - 0.1,
                 y2: self.block_top,
                 color: self.color,
             },
             Line {
-                x1: self.x + 0.05,
+                x1: self.x + 0.1,
                 y1: self.block_bottom,
-                x2: self.x + 0.05,
+                x2: self.x + 0.1,
                 y2: self.block_top,
                 color: self.color,
             },
             Line {
-                x1: self.x,
+                x1: self.x - 0.1,
                 y1: self.block_top,
-                x2: self.x + 0.05,
+                x2: self.x + 0.1,
                 y2: self.block_top,
                 color: self.color,
             },

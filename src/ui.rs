@@ -165,8 +165,8 @@ fn draw_k_line_chart<B: Backend>(f: &mut Frame<B>, app: &App, area: Rect) {
     //     ),
     // ];
     let datasets = vec![Dataset::default()
-        .name("data_test")
-        .marker(symbols::Marker::Dot)
+        .name("K 线图")
+        .marker(symbols::Marker::Braille)
         .data(&app.k_line_datas)];
     let kline = KLine::new(datasets)
         .block(
@@ -186,7 +186,6 @@ fn draw_k_line_chart<B: Backend>(f: &mut Frame<B>, app: &App, area: Rect) {
                 .bounds(app.get_x_bounds())
                 .labels(vec![
                     Span::styled(app.get_start_x_label(), Style::default().add_modifier(Modifier::BOLD)),
-                    Span::styled(app.get_center_x_label(), Style::default().add_modifier(Modifier::BOLD)),
                     Span::styled(app.get_end_x_label(), Style::default().add_modifier(Modifier::BOLD))
                 ])
 

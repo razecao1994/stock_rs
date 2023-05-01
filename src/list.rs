@@ -21,7 +21,7 @@ impl<T> StatefulList<T> {
                 } else {
                     i + 1
                 }
-            },
+            }
             None => 0,
         };
         self.state.select(Some(i));
@@ -35,7 +35,7 @@ impl<T> StatefulList<T> {
                 } else {
                     i - 1
                 }
-            },
+            }
             None => 0,
         };
         self.state.select(Some(i));

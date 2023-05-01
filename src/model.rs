@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Trend {
@@ -111,18 +111,18 @@ pub struct StockData {
     #[serde(rename = "preClose")]
     pre_close: f32,
     #[serde(rename = "kLines")]
-    k_lines: Vec<Kline>,           // 当日的成交详情
+    k_lines: Vec<Kline>, // 当日的成交详情
     #[serde(rename = "mainInOut")]
-    main_in_out: MainInOut,        // 当日的主力买卖详情
+    main_in_out: MainInOut, // 当日的主力买卖详情
     #[serde(rename = "pastMainIns")]
-    past_main_ins: Vec<MainIns>,   // 过去90天的主力买卖数据
+    past_main_ins: Vec<MainIns>, // 过去90天的主力买卖数据
     #[serde(rename = "pastKLines")]
     past_k_lines: Vec<KLinesData>, // 过去90天的k线
     macd: Vec<Macd>,
     kdj: Vec<Kdj>, // 过去90天的kdj
     max: f32,
     min: f32,
-    view: String,   // k线级别，有day、week、month、5min~120min
+    view: String,           // k线级别，有day、week、month、5min~120min
     report: Option<Report>, // 今天的内盘、外盘、主力买卖统计
     #[serde(rename = "holdCount")]
     hold_count: i32,

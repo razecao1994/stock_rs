@@ -1,5 +1,6 @@
 # 说明
 利用rust实现一个获取股票数据，展示出详细股票信息的ui界面
+![screenshot](assets/screenshot_preview.png)
 
 # 依赖库
 - tui

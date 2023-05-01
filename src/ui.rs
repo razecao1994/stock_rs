@@ -4,7 +4,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use custom_widget::kline::{kblock::KLineData};
+use custom_widget::kline::kline::{Axis, Dataset, KLine};
 use std::{
     error::Error,
     io,
@@ -15,6 +15,7 @@ use tui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::Color,
     style::{Modifier, Style},
+    symbols,
     text::{Span, Spans},
     widgets::{Block, Borders, List, ListItem, Paragraph, Wrap},
     Frame, Terminal,
@@ -106,7 +107,7 @@ fn draw_list<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
     f.render_stateful_widget(widget_items, area, &mut app.stock_ids.state);
 }
 
-fn draw_stock_block<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
+fn draw_stock_block<B: Backend>(f: &mut Frame<B>, app: &App, area: Rect) {
     let block = Block::default()
         .borders(Borders::ALL)
         .title(app.selected_item_brief_info().stock_name);
@@ -118,9 +119,10 @@ fn draw_stock_block<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
         .constraints([Constraint::Percentage(10), Constraint::Percentage(90)])
         .split(area);
     draw_stock_header(f, app, chunks[0]);
+    draw_k_line_chart(f, app, chunks[1]);
 }
 
-fn draw_stock_header<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
+fn draw_stock_header<B: Backend>(f: &mut Frame<B>, app: &App, area: Rect) {
     let text = vec![
         Spans::from(Span::styled(
             "最新: 0.900",
@@ -150,7 +152,7 @@ fn draw_stock_header<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
     f.render_widget(paragraph, area);
 }
 
-fn draw_k_line_chart<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
+fn draw_k_line_chart<B: Backend>(f: &mut Frame<B>, app: &App, area: Rect) {
     // let x_labels = vec![
     //     Span::styled(
     //         format!("{}", app.window[0]),
@@ -162,31 +164,43 @@ fn draw_k_line_chart<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
     //         Style::default().add_modifier(Modifier::BOLD),
     //     ),
     // ];
-    let data = vec![
-        KLineData{
-            start:0.902,
-            end:0.9,
-            min:0.894,
-            max:0.912,
-            date:20230407,
-        },
-        KLineData{
-            start:0.919,
-            end:0.904,
-            min:0.901,
-            max:0.924,
-            date:20230406,
-        },
-        KLineData{
-            start:0.917,
-            end:0.925,
-            min:0.908,
-            max:0.927,
-            date:20230404,
-        },
-        ];
-    let dataset = kline::klinechart::Dataset::default()
-    .name("假数据")
-    .data(data)
-    .style(Style::default().fg(Color::Yellow));
+    let datasets = vec![Dataset::default()
+        .name("data_test")
+        .marker(symbols::Marker::Dot)
+        .data(&app.k_line_datas)];
+    let kline = KLine::new(datasets)
+        .block(
+            Block::default()
+                .title(Span::styled(
+                    "Kline",
+                    Style::default()
+                        .fg(Color::Cyan)
+                        .add_modifier(Modifier::BOLD),
+                ))
+                .borders(Borders::ALL),
+        )
+        .x_axis(
+            Axis::default()
+                .title("X Axis")
+                .style(Style::default().fg(Color::Gray))
+                .bounds(app.get_x_bounds())
+                .labels(vec![
+                    Span::styled(app.get_start_x_label(), Style::default().add_modifier(Modifier::BOLD)),
+                    Span::styled(app.get_center_x_label(), Style::default().add_modifier(Modifier::BOLD)),
+                    Span::styled(app.get_end_x_label(), Style::default().add_modifier(Modifier::BOLD))
+                ])
+
+        )
+        .y_axis(
+            Axis::default()
+                .title("Y Axis")
+                .style(Style::default().fg(Color::Gray))
+                .bounds(app.get_y_bounds())
+                .labels(vec![
+                    Span::styled(app.get_y_bounds()[0].to_string(), Style::default().add_modifier(Modifier::BOLD)),
+                    Span::styled(app.get_center_y_label().to_string(), Style::default().add_modifier(Modifier::BOLD)),
+                    Span::styled(app.get_y_bounds()[1].to_string(), Style::default().add_modifier(Modifier::BOLD))
+                ])
+        );
+    f.render_widget(kline, area);
 }
